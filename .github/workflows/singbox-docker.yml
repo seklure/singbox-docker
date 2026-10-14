@@ -36,12 +36,16 @@ jobs:
           # 恢复 singbox-docker.yml
           mkdir -p .github/workflows
           cp /tmp/singbox-docker.yml.bak .github/workflows/singbox-docker.yml
-          git add .github/workflows/singbox-docker.yml
-          git commit -m "preserve sync workflow" || true
+          # 排除上游中不需要的 workflow 文件
+          rm -f .github/workflows/docker-publish-client.yml \
+                .github/workflows/docker-publish.yml \
+                .github/workflows/update-version.yml
+          git add -A .github/workflows/
+          git commit -m "preserve sync workflow and exclude unwanted workflows" || true
           # 强制推送到 fork
           git push origin main --force
           echo "sync_status=success" >> $GITHUB_ENV
-          echo "message=已强制同步上游，覆盖本地更改（保留 workflow 文件）" >> $GITHUB_ENV
+          echo "message=已强制同步上游，覆盖本地更改（保留 workflow 文件，已排除上游 CI/CD workflow）" >> $GITHUB_ENV
 
       - name: Send email notification
         uses: dawidd6/action-send-mail@v3
