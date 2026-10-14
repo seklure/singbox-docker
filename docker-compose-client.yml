@@ -15,8 +15,8 @@ services:
     # 设置后容器启动时自动拉取订阅并生成运行配置
     # 未设置时直接使用挂载的 conf/config.json
     env_file:
-      - path: .env
-        required: false
+      - .env
+      #  required: false
     volumes:
       - ./conf/config.json:/etc/sing-box/config.json:ro,cached
       - ./conf/config_with_sub.json:/etc/sing-box/config_with_sub.json:ro,cached

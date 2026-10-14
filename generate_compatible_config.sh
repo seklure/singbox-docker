@@ -114,7 +114,7 @@ jq '
             "strategy": "ipv4_only"
           },
           {
-            "domain_suffix": [".local", ".lan", ".internal", ".corp", ".home", ".iflytek.com"],
+            "domain_suffix": [".local", ".lan", ".internal", ".corp", ".home"],
             "outbound": "🎯 全球直连"
           },
           {
@@ -264,7 +264,7 @@ jq '
             {
               "type": "udp",
               "tag": "dns-intranet",
-              "server": "10.0.9.60",
+              "server": "223.5.5.5",
               "server_port": 53
             },
             {
@@ -279,7 +279,7 @@ jq '
               "server": "dns-local"
             },
             {
-              "domain_suffix": [".iflytek.com"],
+              "domain_suffix": [],
               "server": "dns-intranet"
             },
             {
