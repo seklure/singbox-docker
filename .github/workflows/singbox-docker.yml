@@ -2,7 +2,7 @@ name: Sync Upstream & Override
 
 on:
   schedule:
-    - cron: '0 2 * * 0'  # 每天凌晨2点
+    - cron: '0 18 * * *'  # 每天 UTC 18:00（北京时间凌晨 2:00）
   workflow_dispatch:      # 手动触发
 
 jobs:
@@ -36,10 +36,9 @@ jobs:
           # 恢复 singbox-docker.yml
           mkdir -p .github/workflows
           cp /tmp/singbox-docker.yml.bak .github/workflows/singbox-docker.yml
-          # 排除上游中不需要的 workflow 文件
-          rm -f .github/workflows/docker-publish-client.yml \
-                .github/workflows/docker-publish.yml \
-                .github/workflows/update-version.yml
+          # 删除 workflows 目录下除 singbox-docker.yml 之外的所有文件
+          # （覆盖上游现有的三个 workflow，以及上游未来新增的任何 workflow）
+          find .github/workflows -type f ! -name 'singbox-docker.yml' -delete
           git add -A .github/workflows/
           git commit -m "preserve sync workflow and exclude unwanted workflows" || true
           # 强制推送到 fork
