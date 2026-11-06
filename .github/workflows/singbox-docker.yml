@@ -1,0 +1,71 @@
+name: Sync Upstream & Override
+
+on:
+  schedule:
+    - cron: '0 18 * * *'  # 每天 UTC 18:00（北京时间凌晨 2:00）
+  workflow_dispatch:      # 手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream and fetch
+        run: |
+          git remote add upstream https://github.com/iflyelf/singbox-docker.git
+          git fetch upstream
+
+      - name: Force sync upstream
+        run: |
+          git checkout main
+          # 备份 singbox-docker.yml
+          cp .github/workflows/singbox-docker.yml /tmp/singbox-docker.yml.bak
+          # 强制重置到上游最新状态
+          git reset --hard upstream/main
+          # 恢复 singbox-docker.yml
+          mkdir -p .github/workflows
+          cp /tmp/singbox-docker.yml.bak .github/workflows/singbox-docker.yml
+          # 删除 workflows 目录下除 singbox-docker.yml 之外的所有文件
+          # （覆盖上游现有的三个 workflow，以及上游未来新增的任何 workflow）
+          find .github/workflows -type f ! -name 'singbox-docker.yml' -delete
+          git add -A .github/workflows/
+          git commit -m "preserve sync workflow and exclude unwanted workflows" || true
+          # 强制推送到 fork
+          git push origin main --force
+          echo "sync_status=success" >> $GITHUB_ENV
+          echo "message=已强制同步上游，覆盖本地更改（保留 workflow 文件，已排除上游 CI/CD workflow）" >> $GITHUB_ENV
+
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.163.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: '[singbox-docker] Fork 已强制同步上游'
+          to: seklure@seklure.com
+          from: GitHub Actions <${{ secrets.MAIL_USERNAME }}>
+          html_body: |
+            <h2>🔄 singbox-docker 同步完成</h2>
+            <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse;">
+              <tr><td><b>仓库</b></td><td>seklure/singbox-docker</td></tr>
+              <tr><td><b>上游</b></td><td>iflyelf/singbox-docker</td></tr>
+              <tr><td><b>状态</b></td><td>✅ 强制同步完成</td></tr>
+              <tr><td><b>时间</b></td><td>${{ github.event.repository.updated_at }}</td></tr>
+              <tr><td><b>说明</b></td><td>本地更改已被上游版本覆盖（.github/workflows/singbox-docker.yml 已保留）</td></tr>
+            </table>
+            <p>查看详情：<a href="https://github.com/seklure/singbox-docker">仓库页面</a></p>
+            <hr>
+            <small>自动发送 by GitHub Actions</small>
